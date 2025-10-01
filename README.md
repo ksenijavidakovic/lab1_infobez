@@ -16,10 +16,10 @@
     "username": "testuser",
     "password": "mypassword"
   }
-
-Ответ:
-
-{ "message": "registered" }
+  
+  
+  Ответ:
+  { "message": "registered" }
 
 
 - **POST** /auth/login
@@ -31,113 +31,96 @@
   "password": "mypassword"
   }
 
-
-Ответ:
-
-{
-"type": "Bearer",
-"token": "eyJhbGciOiJIUzI1NiJ9..."
-}
+  Ответ:
+  {
+  "type": "Bearer",
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+  }
 
 ###  Работа с данными
 
 - ** GET** /api/data
 Получение списка данных (только для аутентифицированных пользователей).
 Пример ответа:
-
-[
-{
-"id": 1,
-"title": "Hello",
-"owner": "testuser"
-},
-{
-"id": 2,
-"title": "World",
-"owner": "testuser"
-}
-]
+   ```json
+  [
+   {
+        "owner": "testuser",
+        "id": 1,
+        "title": "Hello"
+    },
+    {
+        "owner": "testuser",
+        "id": 2,
+        "title": "World"
+    }
+  ]
 
 
 ### Реализованные меры безопасности
 ### Защита от SQL-инъекций
 
-Используется Spring Data JPA (Hibernate).
 
-Все запросы выполняются через ORM и параметризованные PreparedStatement.
 
-Конкатенация строк в SQL-запросах отсутствует.
+Используется Spring Data JPA (Hibernate), который генерирует SQL-запросы автоматически.
+
+Все запросы выполняются через ORM и PreparedStatement, что исключает возможность подставить произвольный SQL-код.
+
+Конкатенация строк в запросах полностью отсутствует.
+
+Пользовательские данные никогда напрямую не вставляются в SQL.
 
 
 ###  Защита от XSS
 
-Все данные, возвращаемые в API, проходят сериализацию через Jackson.
+Все строки, введённые пользователями, проходят экранирование с помощью HtmlUtils.htmlEscape().
 
-Пользовательский ввод при необходимости экранируется (HtmlUtils.htmlEscape()).
+При регистрации имя пользователя очищается.
+
+В API-ответах (/api/data, /api/echo) все поля также экранируются.
+
+JSON-ответы сериализуются через Jackson, что предотвращает инъекции HTML/JS-кода.
 
 
 ###  Защита от "Broken Authentication"
 
-Реализована JWT-аутентификация:
+Реализована аутентификация на основе JWT-токенов:
 
-При успешном логине генерируется токен с подписью.
+При успешном входе (/auth/login) сервер генерирует JWT с подписью (алгоритм HS256) и сроком действия (expirationMinutes).
 
-Все защищённые эндпоинты проверяют токен через фильтр JwtAuthFilter.
+Каждый запрос к защищённым эндпоинтам проходит через фильтр JwtAuthFilter, который:
 
-Пароли пользователей никогда не хранятся в открытом виде:
+Проверяет подпись токена.
 
-Используется алгоритм BCrypt с фактором сложности 12.
+Извлекает username и role.
 
-Доступ к данным разрешён только аутентифицированным пользователям.
+Добавляет данные в SecurityContextHolder.
 
-###  CI/CD и проверка безопасности
+Пароли пользователей никогда не хранятся в базе в открытом виде:
 
-Настроен GitHub Actions (.github/workflows/ci.yml).
+Используется BCryptPasswordEncoder(12) — устойчивый к перебору и rainbow tables алгоритм.
 
-При каждом push или pull request запускаются проверки:
+При неправильных учётных данных возвращается корректный HTTP-статус 401 Unauthorized.
 
+Доступ к приватным эндпоинтам (/api/**) разрешён только аутентифицированным пользователям.
 
+### Защита от CSRF
 
+CSRF-защита отключена (http.csrf().disable()), так как API предполагается использовать с JWT-токенами в Authorization Header.
 
-### Технологии
+Это соответствует best-practice для REST API: защита основана не на cookie-сессиях, а на токенах.
 
-Java 17
+###  Скриншоты CI/CD
 
-Spring Boot 3.x
+###  Отчёт SAST (SpotBugs)
+![SpotBugs Report](img_1.png)
 
-Spring Security
-
-PostgreSQL
-
-JPA/Hibernate
-
-JWT
-
-BCrypt
-
-###  Запуск проекта локально
-1. Настроить базу данных PostgreSQL
-   CREATE DATABASE infobez_db;
-   CREATE USER infobez_user WITH ENCRYPTED PASSWORD 'strongpassword123';
-   GRANT ALL PRIVILEGES ON DATABASE infobez_db TO infobez_user;
-
-2. Настроить application.properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/infobez_db
-   spring.datasource.username=infobez_user
-   spring.datasource.password=strongpassword123
-   spring.jpa.hibernate.ddl-auto=update
-   spring.jpa.show-sql=true
-
-security.jwt.secret=super-secret-key-change-me
-security.jwt.expirationMinutes=60
-
-3. Собрать и запустить
-   mvn clean install
-   mvn spring-boot:run
+###  Отчёт SCA (Dependency-Check)
+![Dependency-Check](img.png)
+![Dependency-Check](img_2.png)
 
 
-Приложение будет доступно на http://localhost:8082
 
 ###  Автор
 
-Ксения Виданович
+Ксения Виданович P3415
