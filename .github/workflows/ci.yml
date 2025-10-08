@@ -26,6 +26,16 @@ jobs:
       - name: Run SpotBugs
         run: mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs
 
+      - name: Show SpotBugs results
+        if: always()
+        run: |
+          echo "=== SpotBugs Report Summary ==="
+          if [ -f target/spotbugsXml.xml ]; then
+            grep -A 5 "<BugInstance" target/spotbugsXml.xml || echo "No bugs found."
+          else
+            echo "SpotBugs report not found!"
+          fi
+
       - name: Upload SpotBugs report
         uses: actions/upload-artifact@v4
         with:
@@ -34,6 +44,16 @@ jobs:
 
       - name: Run OWASP Dependency-Check
         run: mvn org.owasp:dependency-check-maven:check
+
+      - name: Show Dependency-Check summary
+        if: always()
+        run: |
+          echo "=== Dependency-Check Summary ==="
+          if [ -f target/dependency-check-report.html ]; then
+            grep -E "Critical|High|Medium|Low" target/dependency-check-report.html || echo "No vulnerabilities found."
+          else
+            echo "Dependency-Check report not found!"
+          fi
 
       - name: Upload Dependency-Check report
         uses: actions/upload-artifact@v4
