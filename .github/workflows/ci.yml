@@ -52,13 +52,14 @@ jobs:
       - name: Run OWASP Dependency-Check
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-          OSSINDEX_USERNAME: ${{ secrets.OSSINDEX_USERNAME }}
-          OSSINDEX_PASSWORD: ${{ secrets.OSSINDEX_PASSWORD }}
+          OSSINDEX_USERNAME: token
+          OSSINDEX_PASSWORD: ${{ secrets.OSSINDEX_API_TOKEN }}
         run: |
           mvn org.owasp:dependency-check-maven:check \
-            -Dnvd.api.key=${NVD_API_KEY} \
-            -Dossindex.username=${OSSINDEX_USERNAME} \
-            -Dossindex.password=${OSSINDEX_PASSWORD}
+            -Dnvd.api.key="$NVD_API_KEY" \
+            -Dossindex.username="$OSSINDEX_USERNAME" \
+            -Dossindex.password="$OSSINDEX_PASSWORD"
+      
 
       - name: Show Dependency-Check summary
         if: always()
