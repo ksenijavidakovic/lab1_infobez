@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Service
-public class JwtService {
+public final class JwtService {
     private static final Logger LOGGER = Logger.getLogger(JwtService.class.getName());
     private final Key key;
     private final long expirationMinutes;
@@ -22,13 +22,17 @@ public class JwtService {
     public JwtService(
             @Value("${security.jwt.secret}") String secret,
             @Value("${security.jwt.expirationMinutes}") long expirationMinutes) {
+
         Key tempKey;
         try {
             tempKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize JWT key: {0}", e.getMessage());
-            tempKey = Keys.hmacShaKeyFor("default_fallback_secret_key_please_change".getBytes(StandardCharsets.UTF_8));
+            tempKey = Keys.hmacShaKeyFor(
+                    "default_fallback_secret_key_please_change"
+                            .getBytes(StandardCharsets.UTF_8));
         }
+
         this.key = tempKey;
         this.expirationMinutes = expirationMinutes;
     }
@@ -45,6 +49,13 @@ public class JwtService {
     }
 
     public Jws<Claims> parse(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token);
+    }
+
+    @Override
+    protected final void finalize() throws Throwable {
     }
 }
