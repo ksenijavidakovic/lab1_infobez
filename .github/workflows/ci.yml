@@ -59,7 +59,7 @@ jobs:
             -Dnvd.api.key="$NVD_API_KEY" \
             -Dossindex.username="$OSSINDEX_USERNAME" \
             -Dossindex.password="$OSSINDEX_PASSWORD"
-      
+
       
 
       - name: Show Dependency-Check summary
